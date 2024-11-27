@@ -1,0 +1,60 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  OUT_DIR: dist
+  OUT_FILE: jctp
+  OUT_ARCHIVE: "{{ env \"OUT_ARCHIVE\" | default \"jctp\" }}"
+
+tasks:
+  build:
+    internal: true
+    aliases:
+      - build
+      - compile
+    vars:
+      BUILD_VERSION: "{{ env \"BUILD_VERSION\" | default \"dev\" }}"
+      BUILD_COMMIT:
+        sh: git rev-parse --short HEAD
+    env:
+      GOOS: linux
+      GOARCH: arm64
+    cmd: |
+      go build \
+        -ldflags="{{.LDFLAGS}} -X 'main.Version={{.BUILD_VERSION}}' -X 'main.CommitHash={{.BUILD_COMMIT}}' -X 'main.BuildTimestamp={{ now }}'" \
+        -o "{{.OUT_DIR}}/{{.OUT_FILE}}" \
+        .
+    deps:
+      - clean
+
+  dev:
+    cmd: wgo run .
+
+  default:
+    cmds:
+      - task: dev
+
+  build:release:
+    cmds:
+      - task: build
+        vars:
+          LDFLAGS: -s -w
+
+  build:debug:
+    cmds:
+      - task: build
+        vars:
+          LDFLAGS: ""
+
+  clean:
+    cmd: rm -rf "{{.OUT_DIR}}"
+
+  test:
+    cmd: go test -v -cover -coverprofile=coverage.out ./...
+
+  docker:
+    cmds:
+      - task: build:debug
+      - docker build . -t jctp
+      # - docker run --rm -it --name jctp -p 1337:1337 jctp

@@ -1,0 +1,28 @@
+general: {
+    debug_level = 4
+    debug_timestamps = false
+    debug_colors = false
+}
+
+media: {
+    ipv6 = true
+    ipv6_linklocal = true
+
+    nack_optimizations = true
+}
+
+nat: {
+    stun_server = "stun.cloudflare.com"
+    stun_port = 3478
+
+    turn_rest_api = "http://turn-proxy:1337"
+    turn_rest_api_key = ""
+    turn_rest_api_method = "GET"
+    turn_rest_api_timeout = 10
+
+    full_trickle = true
+}
+
+transports: {
+    disable = "libjanus_pfunix.so"
+}

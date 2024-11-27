@@ -1,0 +1,80 @@
+name: nextcloud_test
+
+services:
+  nats:
+    image: nats:alpine
+
+  janus:
+    image: ghcr.io/actcoding/containers/spreed:janus-1.3.0
+    volumes:
+      - ./janus.jcfg:/usr/local/etc/janus/janus.jcfg:ro
+
+  spreed:
+    image: strukturag/nextcloud-spreed-signaling:2.0.1
+    env_file:
+      - spreed.env
+    ports:
+      - 8080:8080
+      - 8888:8888
+    depends_on:
+      - nats
+      - janus
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: nextcloud
+      POSTGRES_DB: nextcloud
+    # volumes:
+    #   - db_data:/var/lib/postgresql/data
+
+  turn-proxy:
+    image: jctp
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    env_file:
+      - docker.env
+
+  app:
+    image: nextcloud:30-apache
+    network_mode: service:spreed
+    depends_on:
+      - db
+      - spreed
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: nextcloud
+      POSTGRES_HOST: db
+      NEXTCLOUD_ADMIN_USER: admin
+      NEXTCLOUD_ADMIN_PASSWORD: admin
+    # volumes:
+    #   - cloud_data_apps:/var/www/html/custom_apps
+    #   - cloud_data_config:/var/www/html/config
+    #   - cloud_data_files:/var/www/html/data
+    user: root
+    entrypoint: /hook.sh
+    configs:
+      - source: init
+        target: /hook.sh
+        mode: 0755
+
+# volumes:
+#   db_data:
+#   cloud_data_apps:
+#   cloud_data_config:
+#   cloud_data_files:
+
+configs:
+  init:
+    content: |
+      #!/bin/bash
+
+      set -ex
+
+      /usr/bin/sed -i 's/80/8888/g' /etc/apache2/ports.conf
+      /usr/bin/sed -i 's/80/8888/g' /etc/apache2/sites-enabled/000-default.conf
+
+      exec /entrypoint.sh apache2-foreground
