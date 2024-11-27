@@ -58,3 +58,4 @@ Temporary Items
 .task/
 dist/
 *.env
+coverage.out
