@@ -78,7 +78,7 @@ jobs:
           labels: |
             org.opencontainers.image.vendor="act coding GbR"
           flavor: |
-            latest=on
+            latest=true
           tags: |
             type=semver,pattern={{version}}
 
