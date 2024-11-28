@@ -17,6 +17,15 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos:
+          - linux
+          - darwin
+          - windows
+        goarch:
+          - amd64
+          - arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -38,10 +47,31 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Build
+        if: github.ref_type != 'tag'
         run: task build:debug
         env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
           BUILD_VERSION: "ci-${{ github.run_number }}"
           BUILD_COMMIT: "${{ github.sha }}"
+
+      - name: Build
+        if: github.ref_type == 'tag'
+        run: task build:release
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          BUILD_VERSION: "${{ github.ref_name }}"
+          BUILD_COMMIT: "${{ github.sha }}"
+          OUT_FILE: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}
+
+      - name: Upload artifacts
+        if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            dist/*
 
   test:
     runs-on: ubuntu-latest
@@ -70,6 +100,7 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
+    if: false
     needs:
       - build
       - test
@@ -125,32 +156,16 @@ jobs:
     if: github.ref_type == 'tag'
     permissions:
       contents: write
+    needs:
+      - build
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          go-version: ${{ env.GO_VERSION }}
-      - uses: arduino/setup-task@v2
-        with:
-          version: ${{ env.TASK_VERSION }}
-
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Build
-        run: task build:release
-        env:
-          BUILD_VERSION: "${{ github.ref_name }}"
-          BUILD_COMMIT: "${{ github.sha }}"
-          OUT_FILE: ${{ github.event.repository.name }}-${{ github.ref_name }}
+          merge-multiple: true
+          path: dist
 
       - id: extract-changelog
         uses: sean0x42/markdown-extract@v2
@@ -160,6 +175,7 @@ jobs:
           no-print-matched-heading: true
 
       - name: Create Release
+        if: ${{ !env.ACT }}
         uses: softprops/action-gh-release@v2
         with:
           body: |

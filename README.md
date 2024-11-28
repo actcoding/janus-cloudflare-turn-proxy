@@ -1,3 +1,5 @@
+[![CI](https://github.com/actcoding/janus-cloudflare-turn-proxy/actions/workflows/ci.yml/badge.svg)](https://github.com/actcoding/janus-cloudflare-turn-proxy/actions/workflows/ci.yml)
+
 # Janus Cloudflare TURN Proxy
 
 A proxy to transform the response of a Cloudflare TURN request into a format Janus understands.
