@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*.*.*"
   pull_request:
     branches:
       - main
+
+env:
+  GO_VERSION: '1.23'
+  TASK_VERSION: '3.x'
 
 jobs:
   build:
@@ -15,10 +21,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
       - uses: arduino/setup-task@v2
         with:
-          version: 3.x
+          version: ${{ env.TASK_VERSION }}
 
       - name: Build
         run: task build:debug
@@ -35,7 +43,7 @@ jobs:
 
       - uses: arduino/setup-task@v2
         with:
-          version: 3.x
+          version: ${{ env.TASK_VERSION }}
 
       - name: Run tests
         run: task test
@@ -86,8 +94,47 @@ jobs:
         with:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
             BUILD_COMMIT=${{ steps.sha.outputs.sha_short }}
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: arduino/setup-task@v2
+        with:
+          version: ${{ env.TASK_VERSION }}
+
+      - name: Build
+        run: task build:release
+        env:
+          BUILD_VERSION: "${{ github.ref_name }}"
+          BUILD_COMMIT: "${{ github.sha }}"
+          OUT_FILE: ${{ github.event.repository.name }}-${{ github.ref_name }}
+
+      - id: extract-changelog
+        uses: sean0x42/markdown-extract@v2
+        with:
+          file: CHANGELOG.md
+          pattern: ${{ github.ref_name }}
+          no-print-matched-heading: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            ## Changelog
+            ${{ steps.extract-changelog.outputs.markdown }}
+          files: |
+            dist/*
