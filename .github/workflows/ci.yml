@@ -77,6 +77,10 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           labels: |
             org.opencontainers.image.vendor="act coding GbR"
+          flavor: |
+            latest=on
+          tags: |
+            type=semver,pattern={{version}}
 
       - name: Build and push
         uses: docker/build-push-action@v6
