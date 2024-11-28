@@ -3,8 +3,8 @@
 version: '3'
 
 vars:
-  OUT_DIR: dist
-  OUT_FILE: jctp
+  OUT_DIR: "{{ env \"OUT_DIR\" | default \"dist\" }}"
+  OUT_FILE: "{{ env \"OUT_FILE\" | default \"jctp\" }}"
 
 tasks:
   build:
