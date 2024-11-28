@@ -16,7 +16,7 @@ tasks:
     vars:
       BUILD_VERSION: "{{ env \"BUILD_VERSION\" | default \"dev\" }}"
       BUILD_COMMIT:
-        sh: git rev-parse --short HEAD
+        sh: echo "${BUILD_COMMIT:-$(git rev-parse --short HEAD)}"
     env:
       GOOS: linux
       GOARCH: arm64

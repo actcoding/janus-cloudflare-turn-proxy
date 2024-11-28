@@ -1,5 +1,7 @@
 FROM golang:1.23-alpine AS build
 
+ARG BUILD_COMMIT
+
 RUN apk add --no-cache \
         curl \
         git \
@@ -13,7 +15,7 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
 COPY . .
-RUN task build:release
+RUN task build:release "BUILD_COMMIT=${BUILD_COMMIT}"
 
 
 FROM alpine:3
