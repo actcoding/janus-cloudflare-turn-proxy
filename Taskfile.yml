@@ -5,7 +5,6 @@ version: '3'
 vars:
   OUT_DIR: dist
   OUT_FILE: jctp
-  OUT_ARCHIVE: "{{ env \"OUT_ARCHIVE\" | default \"jctp\" }}"
 
 tasks:
   build:
