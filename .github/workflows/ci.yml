@@ -74,6 +74,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
           labels: |
             org.opencontainers.image.vendor="act coding GbR"
 
