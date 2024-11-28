@@ -100,7 +100,6 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
-    if: false
     needs:
       - build
       - test
