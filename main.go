@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	_ "embed"
 )
 
 type Payload struct {
@@ -20,12 +22,17 @@ var (
 	CommitHash     = "n/a"
 	BuildTimestamp = "n/a"
 
+	//go:embed banner.txt
+	banner string
+
 	flagVersion bool
 
 	config *Config
 )
 
 func main() {
+	print(banner)
+
 	flag.BoolVar(&flagVersion, "version", false, "Print the tool version and exit.")
 	flag.Parse()
 
