@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -13,9 +15,25 @@ type Payload struct {
 	Ttl uint32 `json:"ttl"`
 }
 
-var config *Config
+var (
+	Version        = "dev"
+	CommitHash     = "n/a"
+	BuildTimestamp = "n/a"
+
+	flagVersion bool
+
+	config *Config
+)
 
 func main() {
+	flag.BoolVar(&flagVersion, "version", false, "Print the tool version and exit.")
+	flag.Parse()
+
+	if flagVersion {
+		fmt.Printf("jctp %s \n\nRevision  : %s \nTimestamp : %s \n", Version, CommitHash, BuildTimestamp)
+		os.Exit(0)
+	}
+
 	config = loadConfig()
 
 	http.HandleFunc("/", getRoot)
